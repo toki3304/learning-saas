@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} - Learning SaaS{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+  <!-- コースヘッダー -->
+  <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+    <div class="me-3">
+      <h1 class="h4 mb-2">{{ course.title }}</h1>
+
+      {% if course.category or course.level %}
+        <div class="mb-2">
+          {% if course.category %}
+            <span class="badge bg-secondary me-1">{{ course.category }}</span>
+          {% endif %}
+          {% if course.level %}
+            <span class="badge bg-info text-dark me-1">{{ course.level }}</span>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if course.description %}
+        <p class="mb-0 text-muted">{{ course.description }}</p>
+      {% else %}
+        <p class="mb-0 text-muted small">説明はありません。</p>
+      {% endif %}
+    </div>
+
+    <!-- 右側：ステータス＆ボタン類 -->
+    <div class="text-end">
+      <!-- 受講ステータス -->
+      {% if enrollment %}
+        <div class="mb-2">
+          <span class="badge bg-success me-1">受講中</span>
+          {% if course_completed %}
+            <span class="badge bg-primary">コース完了</span>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="mb-2">
+          <span class="badge bg-secondary">未受講</span>
+        </div>
+      {% endif %}
+
+      <!-- 受講ボタン / 修了証 -->
+      {% if not enrollment and current_user.role != "admin" %}
+        <form method="post"
+              action="{{ url_for('main.enroll_course', course_id=course.id) }}"
+              class="mb-2">
+          <button type="submit" class="btn btn-primary btn-sm">
+            このコースを受講開始する
+          </button>
+        </form>
+      {% endif %}
+
+      {% if enrollment and course_completed %}
+        <a href="{{ url_for('main.course_certificate', course_id=course.id) }}"
+           class="btn btn-outline-success btn-sm mb-2">
+          修了証を表示
+        </a>
+      {% endif %}
+
+      <!-- 管理者用ボタン（レッスン追加はここに1個だけ） -->
+      {% if current_user.role == "admin" %}
+        <div class="d-flex flex-column gap-2">
+          <a href="{{ url_for('main.create_lesson', course_id=course.id) }}"
+             class="btn btn-outline-primary btn-sm">
+            ＋ レッスン追加
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- コース全体の進捗（受講中ユーザー用） -->
+  {% if enrollment and lessons %}
+    {% set completed_count = 0 %}
+    {% for l in lessons %}
+      {% if progress_map.get(l.id) %}
+        {% set completed_count = completed_count + 1 %}
+      {% endif %}
+    {% endfor %}
+    {% set percent = (completed_count / lessons|length * 100) | int %}
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <p class="small text-muted mb-1">
+          コース進捗：{{ completed_count }}/{{ lessons|length }} レッスン（{{ percent }}%）
+        </p>
+        <div class="progress" style="height: 6px;">
+          <div class="progress-bar"
+               role="progressbar"
+               data-progress="{{ percent }}"
+               aria-valuenow="{{ percent }}"
+               aria-valuemin="0"
+               aria-valuemax="100">
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- レッスン一覧 -->
+  <h2 class="h5 mb-2">レッスン一覧</h2>
+
+  {% if lessons %}
+    <div class="list-group">
+      {% for lesson in lessons %}
+        {% set done = progress_map.get(lesson.id) %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-muted small">{{ loop.index }}.</span>
+              <a href="{{ url_for('main.lesson_detail', lesson_id=lesson.id) }}"
+                 class="fw-semibold text-decoration-none">
+                {{ lesson.title }}
+              </a>
+              {% if done %}
+                <span class="badge bg-success">完了</span>
+              {% endif %}
+            </div>
+          </div>
+          <div>
+            <a href="{{ url_for('main.lesson_detail', lesson_id=lesson.id) }}"
+               class="btn btn-outline-primary btn-sm">
+              開く
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">まだレッスンが登録されていません。</p>
+  {% endif %}
+
+</div>
+
+<!-- 進捗バーの幅を data-progress から設定 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var bars = document.querySelectorAll('.progress-bar[data-progress]');
+    bars.forEach(function (bar) {
+      var val = bar.getAttribute('data-progress');
+      var num = parseInt(val, 10);
+      if (!isNaN(num)) {
+        bar.style.width = num + '%';
+      }
+    });
+  });
+</script>
+{% endblock %}

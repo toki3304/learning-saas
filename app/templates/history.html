@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}学習履歴 - Learning SaaS{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h1 class="h4 mb-3">学習履歴</h1>
+
+  <!-- フィルタフォーム -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+      <label class="form-label small text-muted">コース</label>
+      <select name="course_id" class="form-select">
+        <option value="">すべてのコース</option>
+        {% for c in courses %}
+          <option value="{{ c.id }}" {% if selected_course_id == c.id %}selected{% endif %}>
+            {{ c.title }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small text-muted">開始日</label>
+      <input type="date" name="start_date" value="{{ start_date_str }}" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small text-muted">終了日</label>
+      <input type="date" name="end_date" value="{{ end_date_str }}" class="form-control">
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+      <button type="submit" class="btn btn-primary w-100">絞り込み</button>
+    </div>
+  </form>
+
+  <div class="row g-4">
+    <!-- レッスン履歴 -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h5 mb-2">最近完了したレッスン</h2>
+
+          <div class="table-responsive mb-0">
+            <table class="table table-striped align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>完了日時</th>
+                  <th>コース</th>
+                  <th>レッスン</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if recent_lessons %}
+                  {% for p in recent_lessons %}
+                  <tr>
+                    <td>{{ p.completed_at.strftime("%Y-%m-%d %H:%M") if p.completed_at else "-" }}</td>
+                    <td>{{ p.lesson.course.title }}</td>
+                    <td>
+                      <a href="{{ url_for('main.lesson_detail', lesson_id=p.lesson.id) }}">
+                        {{ p.lesson.title }}
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="3" class="text-muted">
+                      対象期間のレッスン完了はありません。
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- クイズ履歴 -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h5 mb-2">最近のクイズ結果</h2>
+
+          <div class="table-responsive mb-0">
+            <table class="table table-striped align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>受験日時</th>
+                  <th>コース / レッスン</th>
+                  <th>スコア</th>
+                  <th>詳細</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if recent_quiz_results %}
+                  {% for r in recent_quiz_results %}
+                  {% set percent = 0 %}
+                  {% if r.total_questions > 0 %}
+                    {% set percent = (r.score / r.total_questions * 100) | int %}
+                  {% endif %}
+                  <tr>
+                    <td>{{ r.taken_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                    <td>
+                      {{ r.lesson.course.title }} /
+                      {{ r.lesson.title }}
+                    </td>
+                    <td>
+                      {{ r.score }} / {{ r.total_questions }}
+                      <span class="small text-muted ms-1">（{{ percent }}%）</span>
+                    </td>
+                    <td>
+                      <a href="{{ url_for('main.quiz_result_detail', result_id=r.id) }}"
+                         class="btn btn-sm btn-outline-primary">
+                        詳細
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="4" class="text-muted">
+                      対象期間のクイズ結果はありません。
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

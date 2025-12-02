@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.title }} - 問題ごとの統計 | Learning SaaS{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+  {# 進捗バー用のCSS。styleタグ内は純粋なCSSだけなのでエラー出ない #}
+  <style>
+    .quiz-bar {
+      height: 8px;
+      transition: width .3s ease;
+    }
+    .quiz-bar-small {
+      height: 6px;
+      transition: width .3s ease;
+    }
+
+    /* 5%刻みで幅クラスを定義 */
+    .quiz-bar-0   { width: 0%; }
+    .quiz-bar-5   { width: 5%; }
+    .quiz-bar-10  { width: 10%; }
+    .quiz-bar-15  { width: 15%; }
+    .quiz-bar-20  { width: 20%; }
+    .quiz-bar-25  { width: 25%; }
+    .quiz-bar-30  { width: 30%; }
+    .quiz-bar-35  { width: 35%; }
+    .quiz-bar-40  { width: 40%; }
+    .quiz-bar-45  { width: 45%; }
+    .quiz-bar-50  { width: 50%; }
+    .quiz-bar-55  { width: 55%; }
+    .quiz-bar-60  { width: 60%; }
+    .quiz-bar-65  { width: 65%; }
+    .quiz-bar-70  { width: 70%; }
+    .quiz-bar-75  { width: 75%; }
+    .quiz-bar-80  { width: 80%; }
+    .quiz-bar-85  { width: 85%; }
+    .quiz-bar-90  { width: 90%; }
+    .quiz-bar-95  { width: 95%; }
+    .quiz-bar-100 { width: 100%; }
+  </style>
+
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <div class="text-muted small mb-1">
+        <a href="{{ url_for('main.course_detail', course_id=course.id) }}">
+          {{ course.title }}
+        </a>
+        &raquo;
+        <a href="{{ url_for('main.lesson_detail', lesson_id=lesson.id) }}">
+          {{ lesson.title }}
+        </a>
+      </div>
+      <h2 class="h4 mb-1">クイズ問題ごとの統計</h2>
+      <p class="text-muted small mb-0">
+        受験回数: {{ total_results }} 回 /
+        集計対象: 各問題の全回答データ（QuizResultDetail）
+      </p>
+    </div>
+
+    <div class="text-end">
+      <a href="{{ url_for('main.quiz_manage', lesson_id=lesson.id) }}"
+         class="btn btn-outline-secondary btn-sm mb-1">
+        クイズ管理へ戻る
+      </a>
+      <a href="{{ url_for('main.quiz_results_admin', lesson_id=lesson.id) }}"
+         class="btn btn-outline-secondary btn-sm mb-1">
+        受験履歴一覧
+      </a>
+    </div>
+  </div>
+
+  {% if not stats_list %}
+    <div class="alert alert-info">
+      このレッスンにはまだクイズがありません。
+    </div>
+  {% else %}
+    {% for stat in stats_list %}
+      {# 正答率を 0〜100 に正規化して 5%刻みに丸め #}
+      {% set cp = stat.correct_percent if stat.correct_percent is not none else 0 %}
+      {% if cp < 0 %}{% set cp = 0 %}{% endif %}
+      {% if cp > 100 %}{% set cp = 100 %}{% endif %}
+      {% set cp_step = (cp // 5) * 5 %}
+
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="me-3">
+              <div class="badge bg-secondary me-1">
+                Q{{ loop.index }}
+              </div>
+              <span class="fw-semibold">
+                {{ stat.question.question_text | truncate(80, True, '…') }}
+              </span>
+            </div>
+
+            <div class="text-end">
+              {% if stat.total_answers > 0 %}
+                <div class="fw-bold">
+                  正答率
+                  <span class="
+                    {% if stat.correct_percent is not none and stat.correct_percent >= 80 %}
+                      text-success
+                    {% elif stat.correct_percent is not none and stat.correct_percent <= 40 %}
+                      text-danger
+                    {% else %}
+                      text-warning
+                    {% endif %}
+                  ">
+                    {{ stat.correct_percent }}%
+                  </span>
+                </div>
+                <div class="small text-muted">
+                  正解 {{ stat.correct_answers }} / 回答 {{ stat.total_answers }}
+                </div>
+              {% else %}
+                <span class="badge bg-light text-muted">
+                  まだ回答データがありません
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if stat.total_answers > 0 %}
+            {# 正答率のプログレスバー（幅はクラスで制御） #}
+            <div class="mt-3">
+              <div class="progress">
+                <div class="progress-bar quiz-bar quiz-bar-{{ cp_step }}"
+                     role="progressbar"
+                     aria-valuenow="{{ stat.correct_percent }}"
+                     aria-valuemin="0" aria-valuemax="100">
+                </div>
+              </div>
+            </div>
+
+            {# 選択肢ごとの集計 #}
+            <div class="mt-3">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:40%;">選択肢</th>
+                    <th style="width:20%;">選択数</th>
+                    <th style="width:40%;">割合</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in stat.choices %}
+                    {% if stat.total_answers > 0 %}
+                      {% set raw_ratio = (item.count * 100) // stat.total_answers %}
+                    {% else %}
+                      {% set raw_ratio = 0 %}
+                    {% endif %}
+                    {% if raw_ratio < 0 %}{% set raw_ratio = 0 %}{% endif %}
+                    {% if raw_ratio > 100 %}{% set raw_ratio = 100 %}{% endif %}
+                    {% set ratio_step = (raw_ratio // 5) * 5 %}
+
+                    <tr>
+                      <td>
+                        {% if item.choice.is_correct %}
+                          <span class="badge bg-success me-1">正解</span>
+                        {% endif %}
+                        {{ item.choice.choice_text }}
+                      </td>
+                      <td>{{ item.count }} 回</td>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="flex-grow-1 me-2">
+                            <div class="progress">
+                              <div class="progress-bar quiz-bar-small quiz-bar-{{ ratio_step }}
+                                          {% if item.choice.is_correct %} bg-success{% endif %}"
+                                   role="progressbar"
+                                   aria-valuenow="{{ raw_ratio }}"
+                                   aria-valuemin="0" aria-valuemax="100">
+                              </div>
+                            </div>
+                          </div>
+                          <span class="small text-muted">{{ raw_ratio }}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}マイコース - Learning SaaS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">マイコース</h1>
+
+  <p class="text-muted">
+    あなたが受講登録しているコースの一覧です。
+  </p>
+
+  {% if courses %}
+    <div class="row g-3">
+      {% for course in courses %}
+        {% set p = progress_map.get(course.id) if progress_map is defined else None %}
+
+        <div class="col-md-6">
+          <div class="card h-100 border-0 shadow-sm position-relative">
+            {% if p and p.is_completed %}
+              <span class="badge bg-success position-absolute" style="top: 8px; right: 8px;">
+                コース完了
+              </span>
+            {% endif %}
+
+            {% if course.thumbnail_filename %}
+              <img
+                src="{{ url_for('static', filename='uploads/courses/' ~ course.thumbnail_filename) }}"
+                class="card-img-top"
+                alt="{{ course.title }}"
+                style="height: 140px; object-fit: cover;"
+              >
+            {% endif %}
+            <div class="card-body">
+              <h2 class="h5 mb-1">{{ course.title }}</h2>
+
+              {% if course.category or course.level %}
+                <p class="small mb-1">
+                  {% if course.category %}
+                    <span class="badge bg-secondary me-1">{{ course.category }}</span>
+                  {% endif %}
+                  {% if course.level %}
+                    <span class="badge bg-info text-dark">{{ course.level }}</span>
+                  {% endif %}
+                </p>
+              {% endif %}
+
+              <p class="small text-muted mb-1">
+                作成日: {{ course.created_at.strftime("%Y-%m-%d") }}
+              </p>
+
+              {% if p %}
+                <p class="small mb-1">
+                  進捗: {{ p.completed }}/{{ p.total }} レッスン
+                  （{{ p.percent }}%）
+                </p>
+                <div class="progress mb-2" style="height: 6px;">
+                  <div
+                    class="progress-bar"
+                    role="progressbar"
+                    data-progress="{{ p.percent }}"
+                    aria-valuenow="{{ p.percent }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                </div>
+              {% else %}
+                <p class="small text-muted mb-1">
+                  まだ進捗はありません。
+                </p>
+              {% endif %}
+
+              <a class="btn btn-outline-primary btn-sm"
+                 href="{{ url_for('main.course_detail', course_id=course.id) }}">
+                コースを開く
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var bars = document.querySelectorAll('.progress-bar[data-progress]');
+        bars.forEach(function (bar) {
+          var val = bar.getAttribute('data-progress');
+          var num = parseInt(val, 10);
+          if (!isNaN(num)) {
+            bar.style.width = num + '%';
+          }
+        });
+      });
+    </script>
+  {% else %}
+    <p>まだ受講中のコースはありません。</p>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('main.index') }}">
+      コース一覧を見る
+    </a>
+  {% endif %}
+{% endblock %}

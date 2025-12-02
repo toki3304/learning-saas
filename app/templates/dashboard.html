@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}ダッシュボード - Learning SaaS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">ダッシュボード</h1>
+
+  <!-- 上段：全体サマリー -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted small mb-1">受講中コース</p>
+          <p class="h4 mb-0">{{ total_courses }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted small mb-1">完了したコース</p>
+          <p class="h4 mb-0">{{ completed_courses }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted small mb-1">完了したレッスン（累計）</p>
+          <p class="h4 mb-0">{{ total_lessons_completed }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted small mb-1">受験したクイズ数</p>
+          <p class="h4 mb-0">{{ total_quizzes }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ストリーク情報 -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted small mb-1">現在の連続学習日数</p>
+          <p class="h4 mb-0">
+            {{ current_streak_days }}
+            <span class="h6 ms-1">日</span>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted small mb-1">過去最長の連続学習日数</p>
+          <p class="h4 mb-0">
+            {{ longest_streak_days }}
+            <span class="h6 ms-1">日</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中段：今日・今週・平均スコア＋グラフ -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-4 col-12">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <p class="text-muted small mb-1">今日完了したレッスン</p>
+          <p class="h4 mb-0">{{ today_completed_lessons }}</p>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <p class="text-muted small mb-1">今週完了したレッスン</p>
+          <p class="h4 mb-0">{{ week_completed_lessons }}</p>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted small mb-1">クイズ平均正答率</p>
+          <p class="h4 mb-0">{{ avg_quiz_score }}<span class="h6 ms-1">%</span></p>
+        </div>
+      </div>
+
+      <!-- 今週の目標達成状況 -->
+      <div class="card border-0 shadow-sm mt-3">
+        <div class="card-body">
+          <p class="text-muted small mb-1 d-flex justify-content-between align-items-center">
+            <span>今週の目標達成状況</span>
+            {% if weekly_goal_percent is not none and weekly_goal_percent >= 100 %}
+              <span class="badge bg-success">今週達成！</span>
+            {% endif %}
+          </p>
+
+          {% if weekly_goal_percent is not none and weekly_goal > 0 %}
+            <p class="mb-1">
+              {{ week_completed_lessons }} / {{ weekly_goal }} レッスン
+              <span class="small text-muted ms-1">（{{ weekly_goal_percent }}%）</span>
+            </p>
+
+            <div class="progress" style="height: 6px;">
+              <div class="progress-bar {% if weekly_goal_percent >= 100 %}bg-success{% endif %}"
+                   role="progressbar"
+                   data-progress="{{ weekly_goal_percent }}"
+                   aria-valuenow="{{ weekly_goal_percent }}"
+                   aria-valuemin="0"
+                   aria-valuemax="100">
+              </div>
+            </div>
+          {% else %}
+            <p class="small text-muted mb-0">
+              まだ目標が設定されていません。プロフィールから「今週の目標レッスン数」を設定しましょう。
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- グラフ：直近7日間の完了レッスン数 -->
+    <div class="col-lg-8 col-12">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <p class="text-muted small mb-2">直近7日間の完了レッスン数</p>
+          <canvas id="lessonsChart" style="max-height: 260px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- 左：受講中のコース -->
+    <div class="col-lg-7">
+      <h2 class="h5 mb-2">受講中のコース</h2>
+      {% if courses %}
+        <div class="vstack gap-2">
+          {% for course in courses %}
+            {% set p = progress_map.get(course.id) %}
+            <div class="card border-0 shadow-sm">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div class="flex-grow-1 me-3">
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <strong>{{ course.title }}</strong>
+                    {% if p and p.is_completed %}
+                      <span class="badge bg-success">コース完了</span>
+                    {% endif %}
+                  </div>
+                  {% if course.category or course.level %}
+                    <div class="small mb-1">
+                      {% if course.category %}
+                        <span class="badge bg-secondary me-1">{{ course.category }}</span>
+                      {% endif %}
+                      {% if course.level %}
+                        <span class="badge bg-info text-dark">{{ course.level }}</span>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                  {% if p %}
+                    <div class="small text-muted mb-1">
+                      {{ p.completed }}/{{ p.total }} レッスン（{{ p.percent }}%）
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                      <div
+                        class="progress-bar"
+                        role="progressbar"
+                        data-progress="{{ p.percent }}"
+                        aria-valuenow="{{ p.percent }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
+                    </div>
+                  {% else %}
+                    <div class="small text-muted">
+                      まだ進捗はありません。
+                    </div>
+                  {% endif %}
+                </div>
+                <a class="btn btn-outline-primary btn-sm"
+                   href="{{ url_for('main.course_detail', course_id=course.id) }}">
+                  開く
+                </a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>まだ受講中のコースはありません。</p>
+      {% endif %}
+    </div>
+
+    <!-- 右：最近の学習レッスン ＋ 最近のクイズ結果 -->
+    <div class="col-lg-5">
+      <h2 class="h5 mb-2">最近完了したレッスン</h2>
+      {% if recent_lessons %}
+        <ul class="list-group mb-3">
+          {% for lp in recent_lessons %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ lp.lesson.course.title }}</strong> / {{ lp.lesson.title }}<br>
+                <small class="text-muted">
+                  完了日: {{ lp.completed_at.strftime("%Y-%m-%d %H:%M") if lp.completed_at else "-" }}
+                </small>
+              </div>
+              <span class="badge bg-success">
+                完了
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">まだ完了したレッスンはありません。</p>
+      {% endif %}
+
+      <h2 class="h5 mb-2 mt-3">最近のクイズ結果</h2>
+      {% if latest_results %}
+        <ul class="list-group">
+          {% for r in latest_results %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ r.lesson.course.title }}</strong> / {{ r.lesson.title }}<br>
+                <small class="text-muted">
+                  受験日: {{ r.taken_at.strftime("%Y-%m-%d %H:%M") }}
+                </small>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge {% if r.score == r.total_questions %}bg-success{% else %}bg-primary{% endif %}">
+                  {{ r.score }} / {{ r.total_questions }}
+                </span>
+                <a href="{{ url_for('main.quiz_result_detail', result_id=r.id) }}"
+                   class="btn btn-outline-secondary btn-sm">
+                  詳細
+                </a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <!-- 🔗 クイズ成績サマリーへのリンク -->
+        <div class="mt-2 text-end">
+          <a href="{{ url_for('main.quiz_summary') }}"
+             class="btn btn-sm btn-outline-primary">
+            クイズ成績サマリーを見る
+          </a>
+        </div>
+      {% else %}
+        <p class="text-muted">まだクイズ結果はありません。</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Chart.js とプログレスバー用スクリプト -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // 進捗バーの幅設定（コース & 週間目標）
+      var bars = document.querySelectorAll('.progress-bar[data-progress]');
+      bars.forEach(function (bar) {
+        var val = bar.getAttribute('data-progress');
+        var num = parseInt(val, 10);
+        if (!isNaN(num)) {
+          bar.style.width = num + '%';
+        }
+      });
+
+      // 直近7日間のグラフ
+      var ctx = document.getElementById('lessonsChart');
+      if (ctx) {
+        var labels = JSON.parse('{{ chart_labels | tojson | safe }}');
+        var values = JSON.parse('{{ chart_values | tojson | safe }}');
+
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '完了レッスン数',
+              data: values
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
+              }
+            }
+          }
+        });
+      }
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}クイズ - {{ lesson.title }} - Learning SaaS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">クイズ：{{ lesson.title }}</h1>
+
+  <p class="mb-3">
+    <a class="btn btn-outline-secondary btn-sm"
+       href="{{ url_for('main.lesson_detail', lesson_id=lesson.id) }}">
+      レッスンに戻る
+    </a>
+  </p>
+
+  <form method="post">
+    <ol class="list-group list-group-numbered mb-3">
+      {% for q in questions %}
+        <li class="list-group-item">
+          <p class="fw-bold mb-2">{{ q.question_text }}</p>
+
+          {% set rd = result_detail.get(q.id) if result_detail else None %}
+
+          {% for c in q.choices %}
+            {% set input_id = "q" ~ q.id ~ "_c" ~ c.id %}
+            <div class="form-check mb-1">
+              <input class="form-check-input"
+                     type="radio"
+                     name="q_{{ q.id }}"
+                     id="{{ input_id }}"
+                     value="{{ c.id }}"
+                     {% if rd and rd.selected == c.id %}checked{% endif %}>
+              <label class="form-check-label" for="{{ input_id }}">
+                {{ c.choice_text }}
+                {% if rd %}
+                  {% if c.is_correct %}
+                    <span class="badge bg-success ms-1">正解</span>
+                  {% elif rd.selected == c.id and not c.is_correct %}
+                    <span class="badge bg-danger ms-1">不正解</span>
+                  {% endif %}
+                {% endif %}
+              </label>
+            </div>
+          {% endfor %}
+
+          {% if rd and q.explanation %}
+            <div class="mt-2 small text-muted">
+              解説: {{ q.explanation }}
+            </div>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+
+    <button class="btn btn-primary">採点する</button>
+  </form>
+
+  {% if score is not none %}
+    <div class="alert alert-info mt-3">
+      スコア: {{ score }} / {{ questions|length }} 問正解でした。
+    </div>
+  {% endif %}
+{% endblock %}

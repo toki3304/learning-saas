@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}クイズ結果一覧（管理者） - {{ lesson.title }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h1 class="h4 mb-3">
+    クイズ結果一覧（管理者）
+  </h1>
+
+  <p class="mb-2">
+    コース：<strong>{{ course.title }}</strong><br>
+    レッスン：<strong>{{ lesson.title }}</strong>
+  </p>
+
+  <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+    {% if total_attempts > 0 %}
+      <span class="badge bg-primary">
+        受験回数：{{ total_attempts }} 回
+      </span>
+      {% if avg_percent is not none %}
+        <span class="badge bg-success">
+          平均正答率：{{ avg_percent }}%
+        </span>
+      {% endif %}
+    {% else %}
+      <span class="text-muted small">まだこのレッスンのクイズ結果はありません。</span>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    <a href="{{ url_for('main.quiz_manage', lesson_id=lesson.id) }}"
+       class="btn btn-sm btn-outline-secondary">
+      クイズ管理に戻る
+    </a>
+    <a href="{{ url_for('main.lesson_detail', lesson_id=lesson.id) }}"
+       class="btn btn-sm btn-outline-secondary ms-1">
+      レッスンに戻る
+    </a>
+  </div>
+
+  {% if results %}
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>受験日時</th>
+            <th>ユーザー</th>
+            <th>スコア</th>
+            <th>正答率</th>
+            <th>詳細</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+            <tr>
+              <td>{{ r.taken_at.strftime("%Y-%m-%d %H:%M") }}</td>
+              <td>
+                {% if r.user %}
+                  {{ r.user.display_name or r.user.name or ('ユーザーID ' ~ r.user.id) }}
+                  <br>
+                  <span class="small text-muted">{{ r.user.email }}</span>
+                {% else %}
+                  ユーザーID: {{ r.user_id }}
+                {% endif %}
+              </td>
+              <td>{{ r.score }} / {{ r.total_questions }}</td>
+              <td>
+                {% if r.total_questions > 0 %}
+                  {{ (r.score / r.total_questions * 100) | int }}%
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('main.quiz_result_detail', result_id=r.id) }}"
+                   class="btn btn-sm btn-outline-primary">
+                  詳細
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">このレッスンではまだクイズが受験されていません。</p>
+  {% endif %}
+</div>
+{% endblock %}

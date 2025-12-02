@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}新規登録 - Learning SaaS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">新規登録</h1>
+  <form method="post" class="col-md-4">
+    <div class="mb-3">
+      <label class="form-label">ユーザー名</label>
+      <input type="text" name="username" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">メールアドレス</label>
+      <input type="email" name="email" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">パスワード</label>
+      <input type="password" name="password" class="form-control" required>
+    </div>
+    <button class="btn btn-primary">登録</button>
+  </form>
+{% endblock %}

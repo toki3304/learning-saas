@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}クイズ管理 - {{ lesson.title }} - Learning SaaS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">クイズ管理（{{ lesson.title }}）</h1>
+
+  <p class="mb-3 d-flex flex-wrap gap-2">
+    <a class="btn btn-primary btn-sm"
+       href="{{ url_for('main.quiz_create', lesson_id=lesson.id) }}">
+      ＋ 新しい問題を追加
+    </a>
+
+    <a class="btn btn-outline-primary btn-sm"
+       href="{{ url_for('main.quiz_results_admin', lesson_id=lesson.id) }}">
+      📊 このレッスンのクイズ結果一覧を見る
+    </a>
+
+    <a class="btn btn-outline-secondary btn-sm"
+       href="{{ url_for('main.lesson_detail', lesson_id=lesson.id) }}">
+      レッスンに戻る
+    </a>
+  </p>
+
+  {% if questions %}
+    <ol class="list-group list-group-numbered">
+      {% for q in questions %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="me-3">
+              <div class="mb-1">
+                <strong>{{ q.sort_order }}. {{ q.question_text }}</strong>
+              </div>
+              <ul class="mb-1">
+                {% for c in q.choices %}
+                  <li>
+                    {% if c.is_correct %}
+                      <span class="badge bg-success me-1">正解</span>
+                    {% endif %}
+                    {{ c.choice_text }}
+                  </li>
+                {% endfor %}
+              </ul>
+              {% if q.explanation %}
+                <div class="small text-muted">
+                  解説: {{ q.explanation }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+              <a href="{{ url_for('main.quiz_edit', question_id=q.id) }}"
+                 class="btn btn-sm btn-outline-primary">
+                編集
+              </a>
+              <form method="post"
+                    action="{{ url_for('main.quiz_delete', question_id=q.id) }}"
+                    onsubmit="return confirm('本当にこの問題を削除しますか？');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  削除
+                </button>
+              </form>
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p>まだクイズ問題がありません。</p>
+  {% endif %}
+{% endblock %}

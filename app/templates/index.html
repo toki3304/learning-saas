@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}コース一覧 - Learning SaaS{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4">コース一覧</h1>
+    {% if current_user.is_authenticated and current_user.role == "admin" %}
+      <a class="btn btn-primary btn-sm" href="{{ url_for('main.create_course') }}">＋ コース作成</a>
+    {% endif %}
+  </div>
+
+  <!-- 検索 + 絞り込みフォーム -->
+  <form method="get" action="{{ url_for('main.index') }}" class="row g-2 align-items-end mb-3">
+    <div class="col-md-4">
+      <label class="form-label small">キーワード検索</label>
+      <input
+        type="text"
+        name="q"
+        class="form-control"
+        placeholder="タイトル・説明で検索"
+        value="{{ q or '' }}"
+      >
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label small">カテゴリ</label>
+      <select name="category" class="form-select">
+        <option value="">すべて</option>
+        {% for c in categories %}
+          <option value="{{ c }}" {% if c == selected_category %}selected{% endif %}>
+            {{ c }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label small">レベル</label>
+      <select name="level" class="form-select">
+        <option value="">すべて</option>
+        {% for lv in levels %}
+          <option value="{{ lv }}" {% if lv == selected_level %}selected{% endif %}>
+            {{ lv }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2 d-flex gap-2">
+      <button class="btn btn-outline-primary btn-sm flex-grow-1 mt-auto">検索</button>
+      <a class="btn btn-outline-secondary btn-sm mt-auto"
+         href="{{ url_for('main.index') }}">
+        クリア
+      </a>
+    </div>
+
+    {% if q or selected_category or selected_level %}
+      <div class="col-12 mt-1">
+        <small class="text-muted">
+          フィルタ:
+          {% if q %}「{{ q }}」{% endif %}
+          {% if selected_category %} / カテゴリ: {{ selected_category }}{% endif %}
+          {% if selected_level %} / レベル: {{ selected_level }}{% endif %}
+          （{{ courses|length }}件）
+        </small>
+      </div>
+    {% endif %}
+  </form>
+
+  {% if courses %}
+    <div class="row g-3">
+      {% for course in courses %}
+        {% set p = progress_map.get(course.id) if progress_map is defined else None %}
+
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm position-relative">
+            {% if p and p.is_completed %}
+              <span class="badge bg-success position-absolute" style="top: 8px; right: 8px;">
+                コース完了
+              </span>
+            {% endif %}
+
+            {% if course.thumbnail_filename %}
+              <img
+                src="{{ url_for('static', filename='uploads/courses/' ~ course.thumbnail_filename) }}"
+                class="card-img-top"
+                alt="{{ course.title }}"
+                style="height: 160px; object-fit: cover;"
+              >
+            {% endif %}
+            <div class="card-body">
+              <h2 class="h5">{{ course.title }}</h2>
+
+              {% if course.category or course.level %}
+                <p class="small mb-1">
+                  {% if course.category %}
+                    <span class="badge bg-secondary me-1">{{ course.category }}</span>
+                  {% endif %}
+                  {% if course.level %}
+                    <span class="badge bg-info text-dark">{{ course.level }}</span>
+                  {% endif %}
+                </p>
+              {% endif %}
+
+              <p class="small text-muted mb-1">
+                作成日: {{ course.created_at.strftime("%Y-%m-%d") }}
+              </p>
+
+              {% if current_user.is_authenticated %}
+                {% if p %}
+                  <p class="small mb-1">
+                    進捗: {{ p.completed }}/{{ p.total }} レッスン
+                    （{{ p.percent }}%）
+                  </p>
+                  <div class="progress mb-2" style="height: 6px;">
+                    <div
+                      class="progress-bar"
+                      role="progressbar"
+                      data-progress="{{ p.percent }}"
+                      aria-valuenow="{{ p.percent }}"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+                {% else %}
+                  <p class="small text-muted mb-1">
+                    進捗: 0%（レッスン未作成）
+                  </p>
+                {% endif %}
+              {% endif %}
+
+              <p class="card-text">
+                {{ course.description or "説明はありません。" }}
+              </p>
+              <a class="btn btn-outline-primary btn-sm"
+                 href="{{ url_for('main.course_detail', course_id=course.id) }}">
+                詳細を見る
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var bars = document.querySelectorAll('.progress-bar[data-progress]');
+        bars.forEach(function (bar) {
+          var val = bar.getAttribute('data-progress');
+          var num = parseInt(val, 10);
+          if (!isNaN(num)) {
+            bar.style.width = num + '%';
+          }
+        });
+      });
+    </script>
+  {% else %}
+    <p>まだコースがありません。</p>
+  {% endif %}
+{% endblock %}

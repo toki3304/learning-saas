@@ -1,0 +1,61 @@
+{# app/templates/quiz/quiz_retry_result.html #}
+{% extends "base.html" %}
+{% block title %}再挑戦結果 | Learning SaaS{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="mb-3">
+    <div class="text-muted small mb-1">
+      <a href="{{ url_for('main.course_detail', course_id=original.lesson.course.id) }}">
+        {{ original.lesson.course.title }}
+      </a>
+      &raquo;
+      <a href="{{ url_for('main.lesson_detail', lesson_id=original.lesson.id) }}">
+        {{ original.lesson.title }}
+      </a>
+    </div>
+    <h2 class="h4 mb-1">不正解だけ再挑戦：結果</h2>
+    <p class="mb-0">
+      スコア
+      <span class="fw-bold">{{ score }} / {{ total }}</span>
+    </p>
+  </div>
+
+  {% for r in results %}
+    <div class="card mb-2">
+      <div class="card-body">
+        <div class="mb-2">
+          <span class="badge {% if r.is_correct %}bg-success{% else %}bg-danger{% endif %} me-1">
+            {% if r.is_correct %}正解{% else %}不正解{% endif %}
+          </span>
+          {{ r.question.question_text }}
+        </div>
+        <div class="small mb-1">
+          あなたの回答：
+          <span class="fw-semibold">{{ r.selected_text }}</span>
+        </div>
+        {% if not r.is_correct and r.correct_text %}
+          <div class="small text-muted">
+            正解：{{ r.correct_text }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <div class="mt-4 d-flex gap-2">
+    <a href="{{ url_for('main.quiz_retry', result_id=original.id) }}"
+       class="btn btn-outline-primary">
+      もう一度、不正解だけ解き直す
+    </a>
+    <a href="{{ url_for('main.quiz_result_detail', result_id=original.id) }}"
+       class="btn btn-outline-secondary">
+      元の結果ページへ戻る
+    </a>
+    <a href="{{ url_for('main.lesson_detail', lesson_id=original.lesson.id) }}"
+       class="btn btn-secondary ms-auto">
+      レッスンに戻る
+    </a>
+  </div>
+</div>
+{% endblock %}

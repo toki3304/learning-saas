@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}クイズ成績サマリー - Learning SaaS{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h1 class="h4 mb-3">クイズ成績サマリー</h1>
+
+  <p class="text-muted">
+    レッスンごとのクイズ成績（ベストスコア / 受験回数 / 最終受験日）をまとめて確認できます。
+  </p>
+
+  {% if summary_list %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="table-responsive mb-0">
+          <table class="table table-striped align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>コース</th>
+                <th>レッスン</th>
+                <th>受験回数</th>
+                <th>ベストスコア</th>
+                <th>最終受験日</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in summary_list %}
+              <tr>
+                <td>{{ row.course.title }}</td>
+                <td>{{ row.lesson.title }}</td>
+                <td>{{ row.attempts }}</td>
+                <td>
+                  {{ row.best_score }} / {{ row.total_questions }}
+                  <span class="small text-muted ms-1">
+                    （{{ row.best_percent }}%）
+                  </span>
+                </td>
+                <td>
+                  {{ row.last_taken_at.strftime("%Y-%m-%d %H:%M") if row.last_taken_at else "-" }}
+                </td>
+                <td>
+                  <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('main.lesson_detail', lesson_id=row.lesson.id) }}"
+                       class="btn btn-sm btn-outline-secondary">
+                      レッスンを見る
+                    </a>
+                    <a href="{{ url_for('main.quiz_result_detail', result_id=row.latest_result.id) }}"
+                       class="btn btn-sm btn-outline-primary">
+                      最新の結果を見る
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <p class="text-muted">
+      まだクイズを受験していません。レッスンからクイズを受けてみましょう。
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

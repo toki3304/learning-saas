@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}クイズ結果の詳細 - {{ lesson.title }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h1 class="h4 mb-2">クイズ結果の詳細</h1>
+
+  <p class="mb-2">
+    コース：<strong>{{ course.title }}</strong><br>
+    レッスン：<strong>{{ lesson.title }}</strong>
+  </p>
+
+  <div class="mb-3">
+    <span class="badge bg-primary me-2">
+      スコア：{{ result.score }} / {{ result.total_questions }}（{{ percent }}%）
+    </span>
+    <span class="text-muted small">
+      受験日時：{{ result.taken_at.strftime("%Y-%m-%d %H:%M") }}
+    </span>
+  </div>
+
+  <div class="mb-3">
+    <a href="{{ url_for('main.lesson_detail', lesson_id=lesson.id) }}"
+       class="btn btn-sm btn-outline-secondary">
+      レッスンに戻る
+    </a>
+    <a href="{{ url_for('main.history') }}"
+       class="btn btn-sm btn-outline-secondary ms-1">
+      学習履歴へ
+    </a>
+    <a href="{{ url_for('main.dashboard') }}"
+       class="btn btn-sm btn-outline-secondary ms-1">
+      ダッシュボードへ
+    </a>
+
+    {# 不正解が1問以上あるときだけ再挑戦ボタンを表示 #}
+    {% if result.score < result.total_questions %}
+      <a href="{{ url_for('main.quiz_retry', result_id=result.id) }}"
+         class="btn btn-sm btn-outline-primary ms-1">
+        不正解だけ再挑戦する
+      </a>
+    {% endif %}
+  </div>
+
+  <hr>
+
+  <h2 class="h5 mb-3">各問題の結果</h2>
+
+  {% if details %}
+    <ol class="list-group list-group-numbered">
+      {% for d in details %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="me-3">
+              <div class="mb-1">
+                <strong>Q{{ loop.index }}.</strong>
+                {{ d.question.question_text }}
+              </div>
+
+              {% if d.question.explanation %}
+                <div class="small text-muted mb-1">
+                  解説：{{ d.question.explanation }}
+                </div>
+              {% endif %}
+
+              <ul class="mb-1">
+                {% for c in d.question.choices %}
+                  <li>
+                    {% set is_user_choice = (c.id == d.choice_id) %}
+                    {% set is_correct_choice = c.is_correct %}
+
+                    {% if is_correct_choice and is_user_choice %}
+                      <span class="badge bg-success me-1">正解（あなたの解答）</span>
+                    {% elif is_correct_choice %}
+                      <span class="badge bg-success me-1">正解</span>
+                    {% elif is_user_choice %}
+                      <span class="badge bg-danger me-1">あなたの解答</span>
+                    {% endif %}
+
+                    {{ c.choice_text }}
+                  </li>
+                {% endfor %}
+              </ul>
+
+              <div class="mt-1">
+                {% if d.is_correct %}
+                  <span class="badge bg-success">この問題は正解です</span>
+                {% else %}
+                  <span class="badge bg-danger">この問題は不正解です</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p class="text-muted">この結果には詳細データがありません。</p>
+  {% endif %}
+</div>
+{% endblock %}

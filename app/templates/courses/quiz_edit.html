@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}クイズ編集 - {{ lesson.title }} - Learning SaaS{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h1 class="h4 mb-3">クイズ問題の編集</h1>
+
+  <p class="mb-2">
+    レッスン: <strong>{{ lesson.title }}</strong>
+  </p>
+  <p class="text-muted small">
+    ※ 問題文と少なくとも1つの選択肢は必須です。正解の選択肢も必ず1つ選んでください。
+  </p>
+
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">問題文 <span class="text-danger small">※必須</span></label>
+      <textarea name="question_text" class="form-control" rows="3" required>{{ question.question_text }}</textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">並び順（sort_order）</label>
+      <input type="number" name="sort_order" class="form-control"
+             value="{{ question.sort_order or 1 }}">
+      <div class="form-text">問題一覧での表示順に使われます。数字が小さいものから表示されます。</div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">解説（任意）</label>
+      <textarea name="explanation" class="form-control" rows="3">{{ question.explanation or '' }}</textarea>
+      <div class="form-text">正解の理由や補足説明があれば入力してください。</div>
+    </div>
+
+    <hr>
+
+    <h2 class="h6 mb-3">選択肢 <span class="text-danger small">※1つ以上入力・正解を1つ選択</span></h2>
+
+    {% for i in range(1, 5) %}
+      <div class="mb-2">
+        <label class="form-label">選択肢 {{ i }}</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <input type="radio" name="correct_choice" value="{{ i }}"
+                   {% if correct_index == i %}checked{% endif %}>
+            <span class="ms-1 small">正解</span>
+          </span>
+          <input type="text"
+                 name="choice{{ i }}"
+                 class="form-control"
+                 value="{{ choice_texts[i-1] }}">
+        </div>
+      </div>
+    {% endfor %}
+
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        保存する
+      </button>
+      <a href="{{ url_for('main.quiz_manage', lesson_id=lesson.id) }}"
+         class="btn btn-outline-secondary">
+        キャンセル
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

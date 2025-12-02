@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}プロフィール - Learning SaaS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">プロフィール</h1>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <h2 class="h6 mb-3">アイコン</h2>
+          {% if profile.avatar_filename %}
+            <img
+              src="{{ url_for('static', filename='uploads/avatars/' ~ profile.avatar_filename) }}"
+              alt="avatar"
+              class="rounded-circle mb-2"
+              style="width: 96px; height: 96px; object-fit: cover;"
+            >
+          {% else %}
+            <div
+              class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center mb-2"
+              style="width: 96px; height: 96px;"
+            >
+              <span class="fs-3">{{ current_user.username[0]|upper }}</span>
+            </div>
+          {% endif %}
+          <p class="small text-muted mb-0">
+            PNG / JPG / GIF（正方形推奨）
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h2 class="h6 mb-3">プロフィール編集</h2>
+
+          <form method="post" enctype="multipart/form-data" class="vstack gap-3">
+            {{ csrf_token() if csrf_token is defined }}
+
+            <div>
+              <label class="form-label">表示名</label>
+              <input
+                type="text"
+                name="display_name"
+                class="form-control"
+                value="{{ profile.display_name or '' }}"
+                placeholder="サイト上に表示する名前"
+              >
+              <div class="form-text">
+                未入力の場合はユーザー名（{{ current_user.username }}）が表示されます。
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">今週の目標レッスン数</label>
+              <input
+                type="number"
+                name="weekly_goal_lessons"
+                min="0"
+                class="form-control"
+                value="{{ profile.weekly_goal_lessons if profile.weekly_goal_lessons is not none else '' }}"
+                placeholder="例: 5"
+              >
+              <div class="form-text">
+                0 以上の整数で入力してください。空欄にすると目標なしになります。<br>
+                ダッシュボードの「今週の目標達成状況」に反映されます。
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">アイコン画像</label>
+              <input type="file" name="avatar" class="form-control">
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary">
+                保存する
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

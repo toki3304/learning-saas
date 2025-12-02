@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.title }} - {{ course.title }} - Learning SaaS{% endblock %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h4 mb-1">
+        {{ lesson.sort_order }}. {{ lesson.title }}
+      </h1>
+      <p class="text-muted mb-0">
+        コース: {{ course.title }} /
+        作成日: {{ course.created_at.strftime("%Y-%m-%d") }}
+      </p>
+    </div>
+    {% if current_user.is_authenticated and current_user.role == "admin" %}
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm"
+           href="{{ url_for('main.lesson_assets', lesson_id=lesson.id) }}">
+          レッスン素材
+        </a>
+        <a class="btn btn-outline-secondary btn-sm"
+           href="{{ url_for('main.quiz_manage', lesson_id=lesson.id) }}">
+          クイズ管理
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      <div class="lesson-content">
+        {{ (lesson.content or "このレッスンにはまだ本文がありません。") | rich_lesson }}
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+    {% if is_completed %}
+      <span class="badge bg-success">このレッスンは完了済みです</span>
+    {% else %}
+      <form method="post" action="{{ url_for('main.complete_lesson', lesson_id=lesson.id) }}">
+        <button class="btn btn-primary btn-sm">このレッスンを完了にする</button>
+      </form>
+    {% endif %}
+
+    <a class="btn btn-outline-secondary btn-sm"
+       href="{{ url_for('main.course_detail', course_id=course.id) }}">
+      コースに戻る
+    </a>
+
+    {% if next_lesson %}
+      <a class="btn btn-outline-primary btn-sm"
+         href="{{ url_for('main.lesson_detail', lesson_id=next_lesson.id) }}">
+        次のレッスンへ →
+      </a>
+    {% endif %}
+  </div>
+
+  <h2 class="h5 mt-4 mb-2">クイズ</h2>
+  {% if quiz_count > 0 %}
+    <p class="small text-muted mb-2">
+      このレッスンには {{ quiz_count }} 問のクイズがあります。
+    </p>
+    <a class="btn btn-outline-primary btn-sm mb-2"
+       href="{{ url_for('main.quiz_take', lesson_id=lesson.id) }}">
+      クイズに挑戦する
+    </a>
+    {% if latest_result %}
+      <p class="small text-muted mb-0">
+        最終結果: {{ latest_result.score }} / {{ latest_result.total_questions }}
+        （{{ latest_result.taken_at.strftime("%Y-%m-%d %H:%M") }}）
+      </p>
+    {% endif %}
+  {% else %}
+    <p>このレッスンにはまだクイズがありません。</p>
+  {% endif %}
+{% endblock %}

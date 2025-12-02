@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}レッスン素材 - {{ lesson.title }} - Learning SaaS{% endblock %}
+{% block content %}
+  <h1 class="h4 mb-3">
+    レッスン素材：{{ lesson.course.title }} / {{ lesson.title }}
+  </h1>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h2 class="h6 mb-3">画像をアップロード</h2>
+      <form method="post" enctype="multipart/form-data" class="vstack gap-3">
+        <div>
+          <label class="form-label">画像ファイル（png / jpg / jpeg / gif）</label>
+          <input type="file" name="file" class="form-control" required>
+        </div>
+        <div>
+          <button class="btn btn-primary btn-sm">アップロード</button>
+          <a href="{{ url_for('main.lesson_detail', lesson_id=lesson.id) }}"
+             class="btn btn-outline-secondary btn-sm">
+            レッスンへ戻る
+          </a>
+        </div>
+        <div class="form-text">
+          アップロード後、このレッスン本文で
+          <code>[[image:ファイル名]]</code> と書くと画像を表示できます。
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <h2 class="h6 mb-2">このレッスンで使える画像一覧</h2>
+  {% if files %}
+    <div class="row g-3">
+      {% for fname in files %}
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm">
+            <img
+              src="{{ url_for('static', filename='uploads/lessons/' ~ fname) }}"
+              class="card-img-top"
+              alt="{{ fname }}"
+              style="height: 160px; object-fit: cover;"
+            >
+            <div class="card-body">
+              <p class="small mb-1">{{ fname }}</p>
+              <p class="small text-muted mb-0">
+                本文で使うコード：<br>
+                <code>[[image:{{ fname }}]]</code>
+              </p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>まだこのレッスン用の画像はありません。</p>
+  {% endif %}
+{% endblock %}

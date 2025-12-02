@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}修了証 - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+  <div class="card shadow-sm" style="max-width: 720px; border-width: 2px;">
+    <div class="card-body text-center py-5 px-4">
+      <p class="text-muted mb-1">Learning SaaS 修了証</p>
+      <h1 class="h3 mb-4">Certificate of Completion</h1>
+
+      <p class="mb-1">このたび</p>
+      <h2 class="h4 mb-3">{{ current_user.display_name }} 様</h2>
+
+      <p class="mb-1">は、次のコースを修了したことを証明します。</p>
+      <h3 class="h4 mb-4">「{{ course.title }}」</h3>
+
+      {% if course.category or course.level %}
+        <p class="mb-3">
+          {% if course.category %}
+            <span class="badge bg-secondary me-1">{{ course.category }}</span>
+          {% endif %}
+          {% if course.level %}
+            <span class="badge bg-info text-dark">{{ course.level }}</span>
+          {% endif %}
+        </p>
+      {% endif %}
+
+      <p class="mb-4 text-muted">
+        {% if completed_at %}
+          修了日: {{ completed_at.strftime("%Y-%m-%d") }}
+        {% else %}
+          修了日: （記録なし）
+        {% endif %}
+      </p>
+
+      <hr class="my-4">
+
+      <p class="small text-muted mb-4">
+        本画面を印刷または PDF として保存することで、修了証としてご利用いただけます。
+      </p>
+
+      <div class="d-flex justify-content-center gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print();">
+          印刷 / PDF 保存
+        </button>
+        <a href="{{ url_for('main.course_detail', course_id=course.id) }}"
+           class="btn btn-outline-primary btn-sm">
+          コース詳細に戻る
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
